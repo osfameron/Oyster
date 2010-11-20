@@ -9,6 +9,7 @@ use Dist::Zilla::App -command;
 use Moose;
 use Config::Any;
 use Hash::Merge 'merge';
+use Oyster::Provision;
 
 sub abstract { 'provision a new Oyster VM' }
 
@@ -35,12 +36,12 @@ sub execute {
     
   my %hash = @hashes > 1 ? %{ merge( @hashes ) } : $hashes[0];
 
-  $hash{provision_backend} = delete $hash{type} || 'Oyster::Provision::Rackspace';
+  my $type = delete $hash{type} || 'Oyster::Provision::Rackspace';
+  $hash{provision_backend} = $type =~/^Oyster::Provision::/ ? $type : "Oyster::Provision::$type";
   $hash{pub_ssh} ||= "$ENV{HOME}/.ssh/id_rsa.pub";
   $hash{size}    ||= 1;  # id 1 - ram 256 MiB - disk 10 GiB
   $hash{image}   ||= 69; # id 69 - Ubuntu 10.10 (meerkat)
 
-  use Oyster::Provision;
   my $server = Oyster::Provision->new(
         name => $name,
         config => \%hash,
