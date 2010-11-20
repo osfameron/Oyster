@@ -1,18 +1,85 @@
 package Oyster::Provision::Rackspace;
 use Moose::Role;
+use Carp;
+use Net::RackSpace::CloudServers;
+use Net::RackSpace::CloudServers::Server;
+use MIME::Base64;
 
 requires 'config';
+
+has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
+    return $ENV{RACKSPACE_USER} if exists $ENV{RACKSPACE_USER};
+    confess "Need api_username or RACKSPACE_USER in environment";
+});
+has 'api_key' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
+    return $ENV{RACKSPACE_KEY} if exists $ENV{RACKSPACE_KEY};
+    confess "Need api_key or RACKSPACE_KEY in environment";
+});
+
+has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', lazy_build => 1, default => sub {
+    my $self = shift;
+    my $rs = Net::RackSpace::CloudServers->new(
+        user => $self->api_username,
+        key  => $self->api_key,
+    );
+    $rs;
+});
+
+sub BUILD {
+    my $self = shift;
+    # get api username and key from config?
+    my $config = $self->config;
+    # ...
+}
 
 sub create {
    my $self = shift;
 
-   $self->config();
+   # Do nothing if the server named $self->name already exists
+   return if scalar grep { $_->name eq $self->name } $self->_rs->get_server();
+
+   # Check the ssh pub key exists and is <10K
+   confess "SSH pubkey needs to exist" if !-f $self->pub_ssh;
+   my $pub_ssh = do {
+       local $/=undef;
+       open my $fh, '<', $self->pub_ssh or die "Cannot open ", $self->pub_ssh, ": $!";
+       my $_data = <$fh>;
+       close $fh or die "Cannot close ", $self->pub_ssh, ": $!";
+       $_data;
+   };
+   confess "SSH pubkey needs to be < 10KiB" if length $pub_ssh > 10*1024;
+
+   # Build the server
+   my $server = Net::RackSpace::CloudServers::Server->new(
+       cloudservers => $self->_cs,
+       name => $self->name,
+       flavor => $self->size,
+       image => $self->image,
+       personality => [
+           {
+               path     => $self->pub_ssh,
+               contents => encode_base64($pub_ssh),
+           },
+       ],
+   );
+   $server->create_server;
+
+   warn "Server public IP is:  ", ($server->public_address)[0], "\n";
+   warn "Server root password: ", $server->adminpass, "\n";
+
+   # Connect to server and execute installation routines?
+   # Use Net::SSH?
 }
 
 sub delete {
    my $self = shift;
 
-   $self->config();
+   # Die if the server named $self->name already exists
+   my ($server) = grep { $_->name eq $self->name } $self->_rs->get_server();
+   confess "No such server: ", $self->name if !$server;
+
+   # Goodbye cruel user!
+   $server->delete_server();
 }
 
 sub resize {
@@ -38,6 +105,16 @@ Use the Rackspace backend on your Oyster configuration file
 The following are required to instantiate a backend:
 
 =over
+
+=item api_username
+
+The rackspace API username, or C<$ENV{RACKSPACE_USER}> will be used if that is
+not given
+
+=item api_key
+
+The rackspace API key, or C<$ENV{RACKSPACE_KEY}> will be used if that is not
+given
 
 =item name
 
