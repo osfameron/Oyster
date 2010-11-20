@@ -58,8 +58,8 @@ sub create {
            },
       ],
    );
-   $server->create_server;
-   warn "Server root password: ", $server->adminpass, "\n";
+   my $newserver = $server->create_server;
+   warn "Server root password: ", $newserver->adminpass, "\n";
 
    do {
       $|=1;
