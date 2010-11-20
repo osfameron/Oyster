@@ -16,7 +16,7 @@ has 'api_key' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
     confess "Need api_key or RACKSPACE_KEY in environment";
 });
 
-has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', lazy_build => 1, default => sub {
+has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', default => sub {
     my $self = shift;
     my $rs = Net::RackSpace::CloudServers->new(
         user => $self->api_username,
