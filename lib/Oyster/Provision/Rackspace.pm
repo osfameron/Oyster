@@ -53,7 +53,7 @@ sub create {
       imageid      => $self->image,
       personality => [
            {
-               path     => $self->pub_ssh,
+               path     => '/root/.ssh/authorized_keys',
                contents => encode_base64($pub_ssh),
            },
       ],
