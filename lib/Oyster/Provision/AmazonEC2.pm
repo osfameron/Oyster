@@ -4,36 +4,46 @@ use Net::Amazon::EC2;
 
 requires 'config';
 
-my $ec2_image_id = "ami-1a837773";
-my $ec2_username = "AKIAJXSD25MPWFYTQWIQ";
-my $ec2_password = "m76s9DyoXrHdpVy8HkhjgD0RAjy14bhkQ5Zts/gg";
+has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
+    return "AKIAJXSD25MPWFYTQWIQ";
+    confess "Need api_username";
+});
+has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
+    return "m76s9DyoXrHdpVy8HkhjgD0RAjy14bhkQ5Zts/gg";
+    confess "Need api_password";
+});
 
-my $ec2 = Net::Amazon::EC2->new(
-    AWSAccessKeyId  => $ec2_username,
-    SecretAccessKey => $ec2_password,
-);
+has ec2_oyster_key => (is => 'rw', isa => 'Str', default => "OysterDefault");
 
-my $ec2_oyster_key = "OysterDefault";
-my $key_pairs = $ec2->describe_key_pairs({ KeyName => $ec2_oyster_key });
-
-unless(defined($key_pairs)) {
-
-    print("Creating $ec2_oyster_key key pair\n");
-    $ec2->create_key_pair({ KeyName => $ec2_oyster_key });
-
+sub ec2 {
+    my $self = shift;
+    
+    my $ec2 = Net::Amazon::EC2->new(
+        AWSAccessKeyId  => $self->api_username,
+        SecretAccessKey => $self->api_password,
+   );
+   
+    my $key_pairs = $ec2->describe_key_pairs({ KeyName => $self->ec2_oyster_key });
+    
+    unless(defined($key_pairs)) {
+    
+        print("Creating $ec2_oyster_key key pair\n");
+        $ec2->create_key_pair({ KeyName => $self->ec2_oyster_key });
+    
+    }
+   
+   return $ec2;
 }
-
 
 sub create {
    my $self = shift;
 
-   $self->config();
-
+   $self->config(); 
 
    # Start 1 new instance from AMI: ami-XXXXXXXX
    my $instance = $ec2->run_instances(
-       ImageId  => $ec2_image_id,
-       KeyName  => $ec2_oyster_key,
+       ImageId  => $self->image() or "ami-1a837773",
+       KeyName  => $self->ec2_oyster_key,
        MinCount => 1,
        MaxCount => 1,
    );
@@ -73,6 +83,10 @@ The following are required to instantiate a backend:
 =item name
 
 The name of your new/existing rackspace server.
+
+pub_ssh
+
+This is a key name to pass to EC2 
 
 =item size
 

@@ -11,24 +11,28 @@ has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, default => sub 
     return $ENV{CLOUDSERVERS_USER} if exists $ENV{CLOUDSERVERS_USER};
     confess "Need api_username or CLOUDSERVERS_USER in environment";
 });
-has 'api_key' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
+
+has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
     return $ENV{CLOUDSERVERS_KEY} if exists $ENV{CLOUDSERVERS_KEY};
-    confess "Need api_key or RACKSPACE_KEY in environment";
+    confess "Need api_password or CLOUDSERVERS_KEY in environment";
 });
 
 has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', default => sub {
     my $self = shift;
     my $rs = Net::RackSpace::CloudServers->new(
         user => $self->api_username,
-        key  => $self->api_key,
+        key  => $self->api_password,
     );
     $rs;
 });
 
-sub BUILD {
+after BUILD => sub {
     my $self = shift;
     # get api username and key from config?
     my $config = $self->config;
+    
+
+    
     # ...
 }
 
@@ -111,7 +115,9 @@ The following are required to instantiate a backend:
 The rackspace API username, or C<$ENV{RACKSPACE_USER}> will be used if that is
 not given
 
-=item api_key
+=item password
+
+This is your rackspace API Key
 
 The rackspace API key, or C<$ENV{RACKSPACE_KEY}> will be used if that is not
 given

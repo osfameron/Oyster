@@ -7,15 +7,16 @@ has 'size'    => ( is => 'ro', isa => 'Str', required => 1 );
 has 'image'   => ( is => 'ro', isa => 'Str', required => 1 );
 has 'pub_ssh' => ( is => 'ro', isa => 'Str', required => 1 );
 
-
-sub config {
-    return {provision_backend => 'Oyster::Provision::Rackspace'};
-}
+has 'config'  => (is => 'rw', isa => 'HashRef', required => 1 );
 
 sub BUILD {
 
     my $self = shift;
 
+    if(!exists($self->config()->{provision_backend})) {
+        $self->config()->{provision_backend} = 'Oyster::Provision::Rackspace';
+    }
+    
     my $role = $self->config()->{provision_backend};
 
     eval "use $role";
