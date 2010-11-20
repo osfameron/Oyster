@@ -60,6 +60,17 @@ sub create {
    );
    $server->create_server;
 
+   do {
+      $|=1;
+      my @tmpservers = $self->_rs->get_server_detail();
+      $server = ( grep { $_->name eq $self->name } @tmpservers )[0];
+      print "\rServer status: ", ($server->status || '?'), " progress: ", ($server->progress || '?');
+      if ( ( $server->status // '' ) ne 'ACTIVE' ) {
+        print " sleeping..";
+        sleep 2;
+      }
+   } while ( ( $server->status // '' ) ne 'ACTIVE' );
+
    warn "Server public IP is:  ", ($server->public_address)[0], "\n";
    warn "Server root password: ", $server->adminpass, "\n";
 
