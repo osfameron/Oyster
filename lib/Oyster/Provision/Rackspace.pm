@@ -34,7 +34,7 @@ after BUILD => sub {
 
     
     # ...
-}
+};
 
 sub create {
    my $self = shift;
