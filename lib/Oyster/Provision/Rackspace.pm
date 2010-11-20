@@ -1,21 +1,22 @@
 package Oyster::Provision::Rackspace;
 use Moose::Role;
-use Carp;
 use Net::RackSpace::CloudServers;
 use Net::RackSpace::CloudServers::Server;
 use MIME::Base64;
 
 requires 'config';
 
-has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
+has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
+sub _build_api_username {
     return $ENV{CLOUDSERVERS_USER} if exists $ENV{CLOUDSERVERS_USER};
-    confess "Need api_username or CLOUDSERVERS_USER in environment";
-});
+    die "Need api_username or CLOUDSERVERS_USER in environment";
+}
 
-has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
+has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
+sub _build_api_password {
     return $ENV{CLOUDSERVERS_KEY} if exists $ENV{CLOUDSERVERS_KEY};
-    confess "Need api_password or CLOUDSERVERS_KEY in environment";
-});
+    die "Need api_password or CLOUDSERVERS_KEY in environment";
+}
 
 has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', default => sub {
     my $self = shift;
@@ -26,16 +27,6 @@ has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', default => sub
     $rs;
 });
 
-after BUILD => sub {
-    my $self = shift;
-    # get api username and key from config?
-    my $config = $self->config;
-    
-
-    
-    # ...
-}
-
 sub create {
    my $self = shift;
 
@@ -43,7 +34,7 @@ sub create {
    return if scalar grep { $_->name eq $self->name } $self->_rs->get_server();
 
    # Check the ssh pub key exists and is <10K
-   confess "SSH pubkey needs to exist" if !-f $self->pub_ssh;
+   die "SSH pubkey needs to exist" if !-f $self->pub_ssh;
    my $pub_ssh = do {
        local $/=undef;
        open my $fh, '<', $self->pub_ssh or die "Cannot open ", $self->pub_ssh, ": $!";
@@ -51,25 +42,36 @@ sub create {
        close $fh or die "Cannot close ", $self->pub_ssh, ": $!";
        $_data;
    };
-   confess "SSH pubkey needs to be < 10KiB" if length $pub_ssh > 10*1024;
+   die "SSH pubkey needs to be < 10KiB" if length $pub_ssh > 10*1024;
 
    # Build the server
    my $server = Net::RackSpace::CloudServers::Server->new(
-       cloudservers => $self->_cs,
-       name => $self->name,
-       flavor => $self->size,
-       image => $self->image,
-       personality => [
+      cloudservers => $self->_rs,
+      name         => $self->name,
+      flavorid     => $self->size,
+      imageid      => $self->image,
+      personality => [
            {
-               path     => $self->pub_ssh,
+               path     => '/root/.ssh/authorized_keys',
                contents => encode_base64($pub_ssh),
            },
-       ],
+      ],
    );
-   $server->create_server;
+   my $newserver = $server->create_server;
+   warn "Server root password: ", $newserver->adminpass, "\n";
 
-   warn "Server public IP is:  ", ($server->public_address)[0], "\n";
-   warn "Server root password: ", $server->adminpass, "\n";
+   do {
+      $|=1;
+      my @tmpservers = $self->_rs->get_server_detail();
+      $server = ( grep { $_->name eq $self->name } @tmpservers )[0];
+      print "\rServer status: ", ($server->status || '?'), " progress: ", ($server->progress || '?');
+      if ( ( $server->status // '' ) ne 'ACTIVE' ) {
+        print " sleeping..";
+        sleep 2;
+      }
+   } while ( ( $server->status // '' ) ne 'ACTIVE' );
+
+   warn "Server public IP is: @{$server->public_address}\n";
 
    # Connect to server and execute installation routines?
    # Use Net::SSH?
@@ -80,7 +82,7 @@ sub delete {
 
    # Die if the server named $self->name already exists
    my ($server) = grep { $_->name eq $self->name } $self->_rs->get_server();
-   confess "No such server: ", $self->name if !$server;
+   die "No such server: ", $self->name if !$server;
 
    # Goodbye cruel user!
    $server->delete_server();

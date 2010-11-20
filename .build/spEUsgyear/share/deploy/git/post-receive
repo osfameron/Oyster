@@ -1,4 +1,0 @@
-#!/bin/sh
-
-cd ..
-env -i git reset --hard HEAD

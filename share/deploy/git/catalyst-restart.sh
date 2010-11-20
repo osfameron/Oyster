@@ -1,18 +1,20 @@
-#!/bin/sh
+#!/bin/bash
 
 # Really this should suck less, its a crap version of this:
 # http://use.perl.org/~zzo/journal/34146
 
-PROJECT=foo
-APP_PATH=/path/to/checkout
+# Work out what our projects called, we must be called from the top level with
+# a scripts/ directory
+
+RESTART_SCRIPT=$( find script/ -type f -name '*_fastcgi.pl' )
+#APP_PATH=/path/to/checkout
 FCGI_SOCKET_PATH=/tmp/$PROJECT.prod.socket
 PID_PATH=/var/run/$PROJECT.prod.pid
 
 case $1 in
   start)
-  echo -n "Starting PROD MT: mt_fastcgi.pl"
-  cd $APP_PATH
-  script/${PROJECT}_fastcgi.pl -l $FCGI_SOCKET_PATH -p $PID_PATH -d -n 5
+  echo -n "Starting PROD: $RESTART_SCRIPT"
+  $RESTART_SCRIPT -l $FCGI_SOCKET_PATH -p $PID_PATH -d -n 5
   echo
 
   # make real sure it's started

@@ -18,14 +18,28 @@ sub create {
   
   mkdir($location);
   my $git = Git::Wrapper->new($location);
+  $git->init();
   
+  my ($postreceive, $postupdate);
   
-  copy(dist_file( 'Oyster', './deploy/git/post-receive'), ($git->dir . '.git/hooks/')) 
+  eval {
+    $postreceive = dist_file( 'Oyster', './deploy/git/post-receive');
+    $postupdate = dist_file( 'Oyster', './deploy/git/post-update');
+  };
+  #Beware there be deamons here
+  if ($@) {
+    $postreceive = './share/deploy/git/post-receive';
+    $postupdate = './share/deploy/git/post-update';
+  }
+
+
+  copy($postreceive, ($git->dir . '/.git/hooks/')) 
     or Error::Simple->throw('Creating post commit hooks failed.');
-  copy(dist_file( 'Oyster', './deploy/git/post-update'), ($git->dir . '.git/hooks/')) 
+    
+  copy($postupdate, ($git->dir . '/.git/hooks/')) 
     or Error::Simple->throw('Creating post commit hooks failed.');
   
-  chmod(0x755, ('./bin/git/hooks/post-receive', './bin/git/hooks/post-update'));
+  chmod(0x755, ($git->dir . '.git/hooks/post-receive', $git->dir . '.git/hooks/post-update'));
   
   return 1;
 }
