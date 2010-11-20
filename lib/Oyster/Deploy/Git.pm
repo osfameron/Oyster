@@ -5,6 +5,8 @@ use Git::Wrapper;
 use Error::Simple;
 
 use Data::Dumper;
+use File::Copy;
+use File::ShareDir ':ALL';
 
 sub create {
   my $self = shift;
@@ -16,6 +18,14 @@ sub create {
   
   mkdir($location);
   my $git = Git::Wrapper->new($location);
+  
+  
+  copy(dist_file( 'Oyster', './bin/git/post-receive'), ($git->dir . '.git/hooks/')) 
+    or Error::Simple->throw('Creating post commit hooks failed.');
+  copy(dist_file( 'Oyster', './bin/git/post-update'), ($git->dir . '.git/hooks/')) 
+    or Error::Simple->throw('Creating post commit hooks failed.');
+  
+  chmod(0x755, ('./bin/git/hooks/post-receive', './bin/git/hooks/post-update'));
   
   return 1;
 }
