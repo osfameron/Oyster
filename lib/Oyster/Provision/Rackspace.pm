@@ -1,6 +1,5 @@
 package Oyster::Provision::Rackspace;
 use Moose::Role;
-use Carp;
 use Net::RackSpace::CloudServers;
 use Net::RackSpace::CloudServers::Server;
 use MIME::Base64;
@@ -10,13 +9,13 @@ requires 'config';
 has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
 sub _build_api_username {
     return $ENV{CLOUDSERVERS_USER} if exists $ENV{CLOUDSERVERS_USER};
-    confess "Need api_username or CLOUDSERVERS_USER in environment";
+    die "Need api_username or CLOUDSERVERS_USER in environment";
 }
 
 has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
 sub _build_api_password {
     return $ENV{CLOUDSERVERS_KEY} if exists $ENV{CLOUDSERVERS_KEY};
-    confess "Need api_password or CLOUDSERVERS_KEY in environment";
+    die "Need api_password or CLOUDSERVERS_KEY in environment";
 }
 
 has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', default => sub {
@@ -35,7 +34,7 @@ sub create {
    return if scalar grep { $_->name eq $self->name } $self->_rs->get_server();
 
    # Check the ssh pub key exists and is <10K
-   confess "SSH pubkey needs to exist" if !-f $self->pub_ssh;
+   die "SSH pubkey needs to exist" if !-f $self->pub_ssh;
    my $pub_ssh = do {
        local $/=undef;
        open my $fh, '<', $self->pub_ssh or die "Cannot open ", $self->pub_ssh, ": $!";
@@ -43,7 +42,7 @@ sub create {
        close $fh or die "Cannot close ", $self->pub_ssh, ": $!";
        $_data;
    };
-   confess "SSH pubkey needs to be < 10KiB" if length $pub_ssh > 10*1024;
+   die "SSH pubkey needs to be < 10KiB" if length $pub_ssh > 10*1024;
 
    # Build the server
    my $server = Net::RackSpace::CloudServers::Server->new(
@@ -83,7 +82,7 @@ sub delete {
 
    # Die if the server named $self->name already exists
    my ($server) = grep { $_->name eq $self->name } $self->_rs->get_server();
-   confess "No such server: ", $self->name if !$server;
+   die "No such server: ", $self->name if !$server;
 
    # Goodbye cruel user!
    $server->delete_server();
