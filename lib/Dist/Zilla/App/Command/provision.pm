@@ -30,15 +30,15 @@ sub execute {
   my $Provision = $cfg->{Provision} or die "No <Provision> section";
   my $target = $Provision->{$name}  or die "No section for <Provision> <$name>";
 
-  my $type = $target->{type} || 'EC2';
+  my $type = $target->{type} || 'Rackspace';
 
   use Oyster::Provision;
   my $server = Oyster::Provision->new(
-        name => $name,
-        size => '256',
-        image => 'Meerkat',
-        pub_ssh => "$ENV{HOME}/.ssh/id_rsa.pub",
-        provision_backend => $type,
+    name              => $name,
+    size              => 1,                              # id 1 - ram 256 MiB - disk 10 GiB
+    image             => 69,                             # id 69 - Ubuntu 10.10 (meerkat)
+    pub_ssh           => "$ENV{HOME}/.ssh/id_rsa.pub",
+    provision_backend => $type,
   );
   $server->create;
   print "Instance $name created! ($server)\n";
