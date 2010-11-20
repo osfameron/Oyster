@@ -8,11 +8,11 @@ use MIME::Base64;
 requires 'config';
 
 has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
-    return $ENV{RACKSPACE_USER} if exists $ENV{RACKSPACE_USER};
-    confess "Need api_username or RACKSPACE_USER in environment";
+    return $ENV{CLOUDSERVERS_USER} if exists $ENV{CLOUDSERVERS_USER};
+    confess "Need api_username or CLOUDSERVERS_USER in environment";
 });
 has 'api_key' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
-    return $ENV{RACKSPACE_KEY} if exists $ENV{RACKSPACE_KEY};
+    return $ENV{CLOUDSERVERS_KEY} if exists $ENV{CLOUDSERVERS_KEY};
     confess "Need api_key or RACKSPACE_KEY in environment";
 });
 
