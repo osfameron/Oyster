@@ -5,12 +5,10 @@ use Net::Amazon::EC2;
 requires 'config';
 
 has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
-    return "AKIAJXSD25MPWFYTQWIQ";
-    confess "Need api_username";
+    die "Need api_username";
 });
 has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
-    return "m76s9DyoXrHdpVy8HkhjgD0RAjy14bhkQ5Zts/gg";
-    confess "Need api_password";
+    die "Need api_password";
 });
 
 has ec2_oyster_key => (is => 'rw', isa => 'Str', default => "OysterDefault");
