@@ -35,7 +35,7 @@ sub execute {
     
   my %hash = @hashes > 1 ? %{ merge( @hashes ) } : $hashes[0];
 
-  $hash{provision_backend} = delete $hash{type} || 'Rackspace';
+  $hash{provision_backend} = delete $hash{type} || 'Oyster::Provision::Rackspace';
   $hash{pub_ssh} ||= "$ENV{HOME}/.ssh/id_rsa.pub";
   $hash{size}    ||= 1;  # id 1 - ram 256 MiB - disk 10 GiB
   $hash{image}   ||= 69; # id 69 - Ubuntu 10.10 (meerkat)
@@ -43,6 +43,7 @@ sub execute {
   use Oyster::Provision;
   my $server = Oyster::Provision->new(
         name => $name,
+        config => \%hash,
         %hash,
   );
   $server->create;
