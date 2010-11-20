@@ -2,6 +2,12 @@ package Oyster::Provision;
 
 use Moose;
 
+has 'name'    => ( is => 'ro', isa => 'Str', required => 1 );
+has 'size'    => ( is => 'ro', isa => 'Str', required => 1 );
+has 'image'   => ( is => 'ro', isa => 'Str', required => 1 );
+has 'pub_ssh' => ( is => 'ro', isa => 'Str', required => 1 );
+
+
 sub config {
     return {provision_backend => 'Oyster::Provision::Rackspace'};
 }

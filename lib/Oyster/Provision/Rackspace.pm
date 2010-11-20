@@ -1,11 +1,6 @@
 package Oyster::Provision::Rackspace;
 use Moose::Role;
 
-has 'name'    => ( is => 'ro', isa => 'Str', required => 1 );
-has 'size'    => ( is => 'ro', isa => 'Str', required => 1 );
-has 'image'   => ( is => 'ro', isa => 'Str', required => 1 );
-has 'pub_ssh' => ( is => 'ro', isa => 'Str', required => 1 );
-
 requires 'config';
 
 sub create {
