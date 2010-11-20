@@ -1,4 +1,5 @@
 package Oyster::Provision::AmazonEC2;
+use Carp;
 use Moose::Role;
 use Net::Amazon::EC2;
 
@@ -41,7 +42,7 @@ sub create {
    $self->config(); 
 
    # Start 1 new instance from AMI: ami-XXXXXXXX
-   my $instance = $ec2->run_instances(
+   my $instance = $self->ec2->run_instances(
        ImageId  => $self->image() or "ami-1a837773",
        KeyName  => $self->ec2_oyster_key,
        MinCount => 1,
@@ -72,7 +73,7 @@ Oyster::Provision::AmazonEC2 -- Provision your Oyster on Amazon EC2
 
 =head1 SYNOPSIS
 
-Use the Rackspace backend on your Oyster configuration file
+Use the Amazon backend on your Oyster configuration file
 
 =head1 REQUIRED PARAMETERS
 
