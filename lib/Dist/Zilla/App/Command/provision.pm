@@ -12,7 +12,7 @@ use Config::Any;
 sub abstract { 'provision a new Oyster VM' }
 
 sub opt_spec {
-  [ 'name|s'     => 'the name of the VM to create' ],
+  [ 'name=s'     => 'the name of the VM to create' ],
 }
 
 sub execute {
