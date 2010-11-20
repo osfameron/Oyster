@@ -59,6 +59,7 @@ sub create {
       ],
    );
    $server->create_server;
+   warn "Server root password: ", $server->adminpass, "\n";
 
    do {
       $|=1;
@@ -71,8 +72,7 @@ sub create {
       }
    } while ( ( $server->status // '' ) ne 'ACTIVE' );
 
-   warn "Server public IP is:  ", ($server->public_address)[0], "\n";
-   warn "Server root password: ", $server->adminpass, "\n";
+   warn "Server public IP is: @{$server->public_address}\n";
 
    # Connect to server and execute installation routines?
    # Use Net::SSH?
