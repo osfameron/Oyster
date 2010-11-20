@@ -26,7 +26,7 @@ sub ec2 {
     
     unless(defined($key_pairs)) {
     
-        print("Creating $ec2_oyster_key key pair\n");
+        print("Creating $self->ec2_oyster_key key pair\n");
         $ec2->create_key_pair({ KeyName => $self->ec2_oyster_key });
     
     }

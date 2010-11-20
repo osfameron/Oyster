@@ -33,8 +33,8 @@ sub execute {
 
   my @hashes = grep $_, $Provision->{Default}, $Provision->{$name}
       or die "No section for <Provision> <$name>, and no <default>";
-    
-  my %hash = @hashes > 1 ? %{ merge( @hashes ) } : $hashes[0];
+
+  my %hash = @hashes > 1 ? %{ merge( @hashes ) } : %{ $hashes[0] };
 
   my $type = delete $hash{type} || 'Oyster::Provision::Rackspace';
   $hash{provision_backend} = $type =~/^Oyster::Provision::/ ? $type : "Oyster::Provision::$type";
