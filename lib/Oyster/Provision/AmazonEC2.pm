@@ -41,7 +41,7 @@ sub create {
 
    # Start 1 new instance from AMI: ami-XXXXXXXX
    my $instance = $self->ec2->run_instances(
-       ImageId  => $self->image() or "ami-1a837773",
+       ImageId  => $self->image() or "ami-be6e99d7",
        KeyName  => $self->ec2_oyster_key,
        MinCount => 1,
        MaxCount => 1,
