@@ -8,7 +8,6 @@ BEGIN {
 use Dist::Zilla::App -command;
 use Moose;
 use Config::Any;
-use Hash::Merge 'merge';
 
 sub abstract { 'provision a new Oyster VM' }
 
@@ -25,25 +24,21 @@ sub execute {
     or die "No name provided!";
   my @config_files = ( './oyster.conf' ); # TODO make configurable
 
-  my $cfg = Config::Any->load_files({ files => \@config_files, use_ext => 0 });
+  my $cfg = Config::Any->load_files({ files => \@config_files });
   ($cfg) = values %{ $cfg->[0] }; # FIX with ::JFDI or similar
 
   my $Provision = $cfg->{Provision} or die "No <Provision> section";
+  my $target = $Provision->{$name}  or die "No section for <Provision> <$name>";
 
-  my @hashes = grep $_, $Provision->{Default}, $Provision->{$name}
-      or die "No section for <Provision> <$name>, and no <default>";
-    
-  my %hash = @hashes > 1 ? %{ merge( @hashes ) } : $hashes[0];
-
-  $hash{provision_backend} = delete $hash{type} || 'Rackspace';
-  $hash{pub_ssh} ||= "$ENV{HOME}/.ssh/id_rsa.pub";
-  $hash{size}    ||= 1;  # id 1 - ram 256 MiB - disk 10 GiB
-  $hash{image}   ||= 69; # id 69 - Ubuntu 10.10 (meerkat)
+  my $type = $target->{type} || 'EC2';
 
   use Oyster::Provision;
   my $server = Oyster::Provision->new(
         name => $name,
-        %hash,
+        size => '256',
+        image => 'Meerkat',
+        pub_ssh => "$ENV{HOME}/.ssh/id_rsa.pub",
+        provision_backend => $type,
   );
   $server->create;
   print "Instance $name created! ($server)\n";

@@ -7,36 +7,30 @@ use MIME::Base64;
 
 requires 'config';
 
-has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
-sub _build_api_username {
-    return $ENV{CLOUDSERVERS_USER} if exists $ENV{CLOUDSERVERS_USER};
-    confess "Need api_username or CLOUDSERVERS_USER in environment";
+has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
+    return $ENV{RACKSPACE_USER} if exists $ENV{RACKSPACE_USER};
+    confess "Need api_username or RACKSPACE_USER in environment";
+});
+has 'api_key' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
+    return $ENV{RACKSPACE_KEY} if exists $ENV{RACKSPACE_KEY};
+    confess "Need api_key or RACKSPACE_KEY in environment";
 });
 
-has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
-sub _build_api_password {
-    return $ENV{CLOUDSERVERS_KEY} if exists $ENV{CLOUDSERVERS_KEY};
-    confess "Need api_password or CLOUDSERVERS_KEY in environment";
-}
-
-has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', default => sub {
+has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', lazy_build => 1, default => sub {
     my $self = shift;
     my $rs = Net::RackSpace::CloudServers->new(
         user => $self->api_username,
-        key  => $self->api_password,
+        key  => $self->api_key,
     );
     $rs;
 });
 
-after BUILD => sub {
+sub BUILD {
     my $self = shift;
     # get api username and key from config?
     my $config = $self->config;
-    
-
-    
     # ...
-};
+}
 
 sub create {
    my $self = shift;
@@ -117,9 +111,7 @@ The following are required to instantiate a backend:
 The rackspace API username, or C<$ENV{RACKSPACE_USER}> will be used if that is
 not given
 
-=item password
-
-This is your rackspace API Key
+=item api_key
 
 The rackspace API key, or C<$ENV{RACKSPACE_KEY}> will be used if that is not
 given
