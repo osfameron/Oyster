@@ -1,4 +1,14 @@
 #!/bin/sh
 
+# This rather relies on being an account with permission to do this.
+# Who does the script run as?  Presumably the owner of the repo as git will
+# use ssh-keys to get onto the server.
+# 
+# Realistically that user needs to be put in /etc/sudoers
+#
+# user ALL=NOPASSWD: /etc/init.d/apache
+#
+# And also the command below should be prefixed by sudo
+
 # Restart server
 /etc/init.d/apache graceful
