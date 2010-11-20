@@ -7,15 +7,17 @@ use MIME::Base64;
 
 requires 'config';
 
-has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
+has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
+sub _build_api_username {
     return $ENV{CLOUDSERVERS_USER} if exists $ENV{CLOUDSERVERS_USER};
     confess "Need api_username or CLOUDSERVERS_USER in environment";
 });
 
-has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
+has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
+sub _build_api_password {
     return $ENV{CLOUDSERVERS_KEY} if exists $ENV{CLOUDSERVERS_KEY};
     confess "Need api_password or CLOUDSERVERS_KEY in environment";
-});
+}
 
 has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', default => sub {
     my $self = shift;

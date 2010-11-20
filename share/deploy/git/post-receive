@@ -2,3 +2,4 @@
 
 cd ..
 env -i git reset --hard HEAD
+dzil listdeps | xargs cpanm --local-lib=~/perl5
