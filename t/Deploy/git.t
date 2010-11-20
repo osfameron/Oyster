@@ -9,6 +9,7 @@ use Test::Exception;
 use File::Temp qw/tempdir/;
 
 BEGIN { use_ok( 'Oyster::Deploy::Git' ); }
+BEGIN { use_ok( 'Git::Wrapper' ); }
 
 my $tmpdir = tempdir();
 
