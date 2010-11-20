@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Restart server
+/etc/init.d/apache graceful
