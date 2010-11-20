@@ -47,16 +47,16 @@ sub create {
 
    # Build the server
    my $server = Net::RackSpace::CloudServers::Server->new(
-       cloudservers => $self->_rs,
-       name => $self->name,
-       flavor => $self->size,
-       image => $self->image,
-       personality => [
+      cloudservers => $self->_rs,
+      name         => $self->name,
+      flavorid     => $self->size,
+      imageid      => $self->image,
+      personality => [
            {
                path     => $self->pub_ssh,
                contents => encode_base64($pub_ssh),
            },
-       ],
+      ],
    );
    $server->create_server;
 
