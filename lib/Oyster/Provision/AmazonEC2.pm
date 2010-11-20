@@ -3,14 +3,19 @@ use Carp;
 use Moose::Role;
 use Net::Amazon::EC2;
 
-requires 'config';
+has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
+sub _build_api_username {
+    my $self = shift;
+    return $ENV{CLOUDSERVERS_USER} if exists $ENV{CLOUDSERVERS_USER};
+    die "Need api_username or CLOUDSERVERS_USER in environment";
+}
 
-has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
-    die "Need api_username";
-});
-has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, default => sub {
-    die "Need api_password";
-});
+has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
+sub _build_api_password {
+    my $self = shift;
+    return $ENV{CLOUDSERVERS_KEY} if exists $ENV{CLOUDSERVERS_KEY};
+    die "Need api_password or CLOUDSERVERS_KEY in environment";
+}
 
 has ec2_oyster_key => (is => 'rw', isa => 'Str', default => "OysterDefault");
 
@@ -26,7 +31,7 @@ sub ec2 {
     
     unless(defined($key_pairs)) {
     
-        print("Creating $self->ec2_oyster_key key pair\n");
+        printf("Creating %s pair\n", $self->ec2_oyster_key);
         $ec2->create_key_pair({ KeyName => $self->ec2_oyster_key });
     
     }
@@ -37,11 +42,9 @@ sub ec2 {
 sub create {
    my $self = shift;
 
-   $self->config(); 
-
    # Start 1 new instance from AMI: ami-XXXXXXXX
    my $instance = $self->ec2->run_instances(
-       ImageId  => $self->image() or "ami-be6e99d7",
+       ImageId  => $self->image() || "ami-be6e99d7",
        KeyName  => $self->ec2_oyster_key,
        MinCount => 1,
        MaxCount => 1,
@@ -52,7 +55,6 @@ sub create {
 sub delete {
    my $self = shift;
 
-   $self->config();
 }
 
 sub resize {

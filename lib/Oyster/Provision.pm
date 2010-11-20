@@ -2,23 +2,20 @@ package Oyster::Provision;
 
 use Moose;
 
-has 'name'    => ( is => 'ro', isa => 'Str', required => 1 );
-has 'size'    => ( is => 'ro', isa => 'Str', required => 1 );
-has 'image'   => ( is => 'ro', isa => 'Str', required => 1 );
-has 'pub_ssh' => ( is => 'ro', isa => 'Str', required => 1 );
-
-has 'config'  => (is => 'rw', isa => 'HashRef', required => 1 );
+has 'api_username' => ( is => 'ro', isa => 'Str');
+has 'api_password' => ( is => 'ro', isa => 'Str');
+has 'name'    => ( is => 'ro', isa => 'Str');
+has 'size'    => ( is => 'ro', isa => 'Str');
+has 'image'   => ( is => 'ro', isa => 'Str');
+has 'pub_ssh' => ( is => 'ro', isa => 'Str');
+has 'provision_backend'  => (is => 'rw', isa => 'Str', required => 1, default => 'Oyster::Provision::Rackspace' );
 
 sub BUILD {
 
     my $self = shift;
 
-    if(!exists($self->config()->{provision_backend})) {
-        $self->config()->{provision_backend} = 'Oyster::Provision::Rackspace';
-    }
+    my $role = $self->provision_backend;
     
-    my $role = $self->config()->{provision_backend};
-
     eval "use $role";
     "$role"->meta->apply($self);
 }

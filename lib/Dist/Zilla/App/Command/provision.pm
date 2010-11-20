@@ -9,6 +9,7 @@ use Dist::Zilla::App -command;
 use Moose;
 use Config::Any;
 use Hash::Merge 'merge';
+Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
 use Oyster::Provision;
 
 sub abstract { 'provision a new Oyster VM' }
@@ -34,6 +35,8 @@ sub execute {
   my @hashes = grep $_, $Provision->{Default}, $Provision->{$name}
       or die "No section for <Provision> <$name>, and no <default>";
 
+  warn Dumper(\@hashes);
+
   my %hash = @hashes > 1 ? %{ merge( @hashes ) } : %{ $hashes[0] };
 
   my $type = delete $hash{type} || 'Oyster::Provision::Rackspace';
@@ -42,9 +45,10 @@ sub execute {
   $hash{size}    ||= 1;  # id 1 - ram 256 MiB - disk 10 GiB
   $hash{image}   ||= 69; # id 69 - Ubuntu 10.10 (meerkat)
 
+  warn Dumper(\%hash); use Data::Dumper;
+
   my $server = Oyster::Provision->new(
         name => $name,
-        config => \%hash,
         %hash,
   );
   $server->create;
