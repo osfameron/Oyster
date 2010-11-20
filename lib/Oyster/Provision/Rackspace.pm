@@ -11,7 +11,7 @@ has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1
 sub _build_api_username {
     return $ENV{CLOUDSERVERS_USER} if exists $ENV{CLOUDSERVERS_USER};
     confess "Need api_username or CLOUDSERVERS_USER in environment";
-});
+}
 
 has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
 sub _build_api_password {
@@ -27,16 +27,6 @@ has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', default => sub
     );
     $rs;
 });
-
-after BUILD => sub {
-    my $self = shift;
-    # get api username and key from config?
-    my $config = $self->config;
-    
-
-    
-    # ...
-};
 
 sub create {
    my $self = shift;
@@ -57,7 +47,7 @@ sub create {
 
    # Build the server
    my $server = Net::RackSpace::CloudServers::Server->new(
-       cloudservers => $self->_cs,
+       cloudservers => $self->_rs,
        name => $self->name,
        flavor => $self->size,
        image => $self->image,
