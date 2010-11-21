@@ -4,6 +4,9 @@ use Net::RackSpace::CloudServers;
 use Net::RackSpace::CloudServers::Server;
 use MIME::Base64;
 
+# TODO http://failverse.com/manually-creating-a-cloud-server-from-a-cloud-files-image/
+# in order to use an already created image to build the server, a la EC2 way
+
 requires 'config';
 
 has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
