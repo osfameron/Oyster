@@ -10,6 +10,10 @@ has 'image'   => ( is => 'ro', isa => 'Str');
 has 'pub_ssh' => ( is => 'ro', isa => 'Str');
 has 'provision_backend'  => (is => 'rw', isa => 'Str', required => 1, default => 'Oyster::Provision::Rackspace' );
 
+# TODO after provision, add the server's name with "oyster-" prefixed to the
+# user's ~/.ssh/ssh_config file so any part of Oyster can ssh there
+# passwordlessly for deploying or whatnot
+
 sub BUILD {
 
     my $self = shift;
