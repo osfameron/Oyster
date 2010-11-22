@@ -1,43 +1,53 @@
 package Oyster::Deploy::Git;
+use strict;
+use warnings;
 
-use Moose;
 use Git::Wrapper;
-use Error::Simple;
 
-use Data::Dumper;
-use File::Copy;
-use File::ShareDir ':ALL';
+our $post_receive = q{
+#!/bin/sh
+cd ..
+env -i git reset --hard HEAD
+dzil listdeps | xargs cpanm --local-lib=~/perl5
+};
+
+our $post_update = q{
+#!/bin/sh
+# This rather relies on being an account with permission to do this.
+# Who does the script run as?  Presumably the owner of the repo as git will
+# use ssh-keys to get onto the server.
+#
+# Realistically that user needs to be put in /etc/sudoers
+#
+# user ALL=NOPASSWD: /etc/init.d/lighttpd
+#
+# Restart server
+sudo /etc/init.d/lighttpd restart
+};
 
 sub create {
   my $self = shift;
   my $location = shift;
 
   if( -f $location || -d $location ) {
-    Error::Simple->throw("$location already exists");
+    die("$location already exists");
   }
 
   mkdir($location);
   my $git = Git::Wrapper->new($location);
   $git->init();
 
-  my ($postreceive, $postupdate);
+  open my $fh_post_receive, '>', $git->dir . '/.git/hooks/post-receive'
+    or die "Cannot write to " . $git->dir . '/.git/hooks/post-receive' . ": $!";
+  print $fh_post_receive $post_receive;
+  close $fh_post_receive
+    or die "Cannot close " . $git->dir . '/.git/hooks/post-receive' . ": $!";
 
-  eval {
-    $postreceive = dist_file( 'Oyster', './deploy/git/post-receive');
-    $postupdate = dist_file( 'Oyster', './deploy/git/post-update');
-  };
-  #Beware there be deamons here
-  if ($@) {
-    $postreceive = './share/deploy/git/post-receive';
-    $postupdate = './share/deploy/git/post-update';
-  }
-
-
-  copy($postreceive, ($git->dir . '/.git/hooks/')) 
-    or Error::Simple->throw('Creating post commit hooks failed.');
-
-  copy($postupdate, ($git->dir . '/.git/hooks/')) 
-    or Error::Simple->throw('Creating post commit hooks failed.');
+  open my $fh_post_update, '>', $git->dir . '/.git/hooks/post-update'
+    or die "Cannot write to " . $git->dir . '/.git/hooks/post-update' . ": $!";
+  print $fh_post_update $post_update;
+  close $fh_post_update
+    or die "Cannot close " . $git->dir . '/.git/hooks/post-update' . ": $!";
 
   chmod(0x755, ($git->dir . '.git/hooks/post-receive', $git->dir . '.git/hooks/post-update'));
 
