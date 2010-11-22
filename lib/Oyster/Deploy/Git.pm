@@ -7,7 +7,7 @@ use warnings;
 our $post_receive = q{
 #!/bin/sh
 cd ..
-env -i git reset --hard HEAD
+/usr/bin/git reset --hard HEAD
 dzil listdeps | xargs cpanm --local-lib=~/perl5
 };
 
