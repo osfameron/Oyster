@@ -3,6 +3,7 @@ use strict;
 use warnings;
 
 #use Git::Wrapper;    # sorry fails tests!
+use Moose;
 
 our $post_receive = q{
 #!/bin/sh
