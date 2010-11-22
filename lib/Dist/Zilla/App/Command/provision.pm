@@ -45,10 +45,11 @@ sub execute {
   $hash{size}    ||= 1;  # id 1 - ram 256 MiB - disk 10 GiB
   $hash{image}   ||= 69; # id 69 - Ubuntu 10.10 (meerkat)
 
-  warn Dumper(\%hash); use Data::Dumper;
+  use Data::Dumper; warn "Config hash: ", Dumper(\%hash);
 
   my $server = Oyster::Provision->new(
         name => $name,
+        config => \%hash,
         %hash,
   );
   $server->create;
