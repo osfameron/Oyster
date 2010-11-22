@@ -2,8 +2,6 @@ package Oyster::Provision;
 
 use Moose;
 
-has 'api_username' => ( is => 'ro', isa => 'Str');
-has 'api_password' => ( is => 'ro', isa => 'Str');
 has 'name'    => ( is => 'ro', isa => 'Str');
 has 'size'    => ( is => 'ro', isa => 'Str');
 has 'image'   => ( is => 'ro', isa => 'Str');
