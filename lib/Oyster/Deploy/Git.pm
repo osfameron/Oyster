@@ -2,7 +2,7 @@ package Oyster::Deploy::Git;
 use strict;
 use warnings;
 
-use Git::Wrapper;
+#use Git::Wrapper;    # sorry fails tests!
 
 our $post_receive = q{
 #!/bin/sh
@@ -34,22 +34,23 @@ sub create {
   }
 
   mkdir($location);
-  my $git = Git::Wrapper->new($location);
-  $git->init();
+  #my $git = Git::Wrapper->new($location);
+  #$git->init();
+  qx{cd $location ; git init};
 
-  open my $fh_post_receive, '>', $git->dir . '/.git/hooks/post-receive'
-    or die "Cannot write to " . $git->dir . '/.git/hooks/post-receive' . ": $!";
+  open my $fh_post_receive, '>', "$location/.git/hooks/post-receive"
+    or die "Cannot write to " .  "$location/.git/hooks/post-receive: $!";
   print $fh_post_receive $post_receive;
   close $fh_post_receive
-    or die "Cannot close " . $git->dir . '/.git/hooks/post-receive' . ": $!";
+    or die "Cannot close " . "$location/.git/hooks/post-receive: $!";
 
-  open my $fh_post_update, '>', $git->dir . '/.git/hooks/post-update'
-    or die "Cannot write to " . $git->dir . '/.git/hooks/post-update' . ": $!";
+  open my $fh_post_update, '>', "$location/.git/hooks/post-update"
+    or die "Cannot write to " . "$location/.git/hooks/post-update: $!";
   print $fh_post_update $post_update;
   close $fh_post_update
-    or die "Cannot close " . $git->dir . '/.git/hooks/post-update' . ": $!";
+    or die "Cannot close " . "$location/.git/hooks/post-update: $!";
 
-  chmod(0x755, ($git->dir . '.git/hooks/post-receive', $git->dir . '.git/hooks/post-update'));
+  chmod(0x755, ("$location/.git/hooks/post-receive", "$location/.git/hooks/post-update"));
 
   return 1;
 }
