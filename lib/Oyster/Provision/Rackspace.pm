@@ -152,7 +152,7 @@ The following are required to instantiate a backend:
 The rackspace API username, or C<$ENV{RACKSPACE_USER}> will be used if that is
 not given
 
-=item password
+=item api_password
 
 This is your rackspace API Key
 
