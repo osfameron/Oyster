@@ -34,9 +34,9 @@ Oyster::Provision - Provision an Oyster
 =head1 SYNOPSIS
 
     my $server = Oyster::Provision->new(
-        name => 'Ostrica',
-        size => '256',
-        image => 'Meerkat',
+        name    => 'Ostrica',
+        size    => '1',     # 256 MiB RAM
+        image   => '69',    # Ubuntu 10.10 Maverick
         pub_ssh => "$ENV{HOME}/.ssh/id_rsa.pub",
     );
     $server->create;
