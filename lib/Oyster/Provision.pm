@@ -19,7 +19,7 @@ sub BUILD {
     my $self = shift;
 
     my $role = $self->provision_backend;
-    
+
     eval "use $role";
     "$role"->meta->apply($self);
 }
