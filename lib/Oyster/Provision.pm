@@ -8,6 +8,7 @@ has 'name'    => ( is => 'ro', isa => 'Str');
 has 'size'    => ( is => 'ro', isa => 'Str');
 has 'image'   => ( is => 'ro', isa => 'Str');
 has 'pub_ssh' => ( is => 'ro', isa => 'Str');
+has 'config'  => ( is => 'rw', isa => 'HashRef', required => 1 );
 has 'provision_backend'  => (is => 'rw', isa => 'Str', required => 1, default => 'Oyster::Provision::Rackspace' );
 
 # TODO after provision, add the server's name with "oyster-" prefixed to the
