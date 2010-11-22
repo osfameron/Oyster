@@ -42,8 +42,31 @@ has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', lazy => 1, def
 sub create {
    my $self = shift;
 
+   die "Rackspace Provisioning backend requires a server name\n" if !defined $self->name;
+
    # Do nothing if the server named $self->name already exists
    return if scalar grep { $_->name eq $self->name } $self->_rs->get_server();
+
+   # Validate size and image
+   {
+       die "Rackspace Provisioning backend requires a server image\n"  if !defined $self->image;
+       my @allowed_images = $self->_rs->get_image();
+       my $image_id = $self->image;
+       if ( !scalar grep { $_->{id} eq $image_id } @allowed_images ) {
+           die "Rackspace Provisioning backend requires a valid image id\nValid images:\n",
+               (map { sprintf("id %-10s -- %s\n", $_->{id}, $_->{name}) } @allowed_images),
+               "\n";
+       }
+
+       die "Rackspace Provisioning backend requires a server size\n"  if !defined $self->size;
+       my @allowed_flavors = $self->_rs->get_flavor();
+       my $flavor_id = $self->size;
+       if ( !scalar grep { $_->{id} eq $flavor_id } @allowed_flavors ) {
+           die "Rackspace Provisioning backend requires a valid size id\nValid flavors:\n",
+               (map { sprintf("id %-10s -- %s\n", $_->{id}, $_->{name}) } @allowed_flavors),
+               "\n";
+       }
+   }
 
    # Check the ssh pub key exists and is <10K
    die "SSH pubkey needs to exist" if !-f $self->pub_ssh;
