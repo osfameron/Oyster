@@ -9,28 +9,33 @@ use MIME::Base64;
 
 requires 'config';
 
-has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
-sub _build_api_username {
+has 'api_username' => ( is => 'ro', isa => 'Str', required => 1, lazy => 1, default => sub {
     my $self = shift;
     return $ENV{CLOUDSERVERS_USER} if exists $ENV{CLOUDSERVERS_USER};
     return $self->config->{api_username}
         or die "Need api_username or CLOUDSERVERS_USER in environment";
-}
+});
 
-has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, lazy_build => 1);
-sub _build_api_password {
+has 'api_password' => ( is => 'ro', isa => 'Str', required => 1, lazy => 1, default => sub {
     my $self = shift;
     return $ENV{CLOUDSERVERS_KEY} if exists $ENV{CLOUDSERVERS_KEY};
     return $self->config->{api_password}
         or die "Need api_password or CLOUDSERVERS_KEY in environment";
-}
+});
 
-has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', default => sub {
+has '_rs' => ( is => 'rw', isa => 'Net::RackSpace::CloudServers', lazy => 1, default => sub {
     my $self = shift;
-    my $rs = Net::RackSpace::CloudServers->new(
-        user => $self->api_username,
-        key  => $self->api_password,
-    );
+    my $rs = eval {
+        Net::RackSpace::CloudServers->new(
+            user => $self->api_username,
+            key  => $self->api_password,
+        );
+    };
+    if ( $@ ) {
+        die
+            "Could not instantiate a backend connection to RackSpace CloudServers.\n",
+            "Check the api_username and api_password on the configuration file\n";
+    }
     $rs;
 });
 
