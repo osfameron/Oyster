@@ -25,7 +25,7 @@ sub execute {
   my $zilla = $self->zilla;
 
   my $name = $opt->name
-    or die "No name provided!";
+    or die "No virtual machine name provided!";
   my @config_files = ($opt->name or './oyster.conf');
 
   my $cfg = Config::Any->load_files({ files => \@config_files, use_ext => 0 });
