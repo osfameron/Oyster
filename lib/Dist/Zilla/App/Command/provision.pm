@@ -4,7 +4,7 @@ package Dist::Zilla::App::Command::provision;
 BEGIN {
   $Dist::Zilla::App::Command::provision::VERSION = '0.1';
 }
-# ABSTRACT: release your dist to the CPAN
+# ABSTRACT: provision a new Oyster VM
 use Dist::Zilla::App -command;
 use Moose;
 use Config::Any;
