@@ -1,25 +1,30 @@
 package Oyster::Provision;
-
 use Moose;
+use namespace::autoclean;
 
-has 'api_username' => ( is => 'ro', isa => 'Str');
-has 'api_password' => ( is => 'ro', isa => 'Str');
-has 'name'    => ( is => 'ro', isa => 'Str');
-has 'size'    => ( is => 'ro', isa => 'Str');
-has 'image'   => ( is => 'ro', isa => 'Str');
-has 'pub_ssh' => ( is => 'ro', isa => 'Str');
-has 'provision_backend'  => (is => 'rw', isa => 'Str', required => 1, default => 'Oyster::Provision::Rackspace' );
+has config => (
+    isa      => 'HashRef',
+    is       => 'ro',
+    required => 1,
+);
 
-sub BUILD {
+has provision_class => (
+    isa     => 'Str',
+    is      => 'ro',
+    default => 'Oyster::Provision::Rackspace'
+);
 
+has 'provision_backend' => (
+    does    => 'Oyster::Provision::API',
+    handles => 'Oyster::Provision::API',
+    lazy    => 1,
+    builder => '_build_provision_backend',
+);
+
+sub _build_provision_backend {
     my $self = shift;
-
-    my $role = $self->provision_backend;
-    
-    eval "use $role";
-    "$role"->meta->apply($self);
+    $self->provision_class->new( ${ $self->config } );
 }
-
 1;
 
 __END__
@@ -31,10 +36,12 @@ Oyster::Provision - Provision an Oyster
 =head1 SYNOPSIS
 
     my $server = Oyster::Provision->new(
-        name => 'Ostrica',
-        size => '256',
-        image => 'Meerkat',
-        pub_ssh => "$ENV{HOME}/.ssh/id_rsa.pub",
+        config => {
+            name    => 'Ostrica',
+            size    => '256',
+            image   => 'Meerkat',
+            pub_ssh => "$ENV{HOME}/.ssh/id_rsa.pub",
+        }
     );
     $server->create;
 
@@ -43,9 +50,9 @@ Oyster::Provision - Provision an Oyster
 By default, the L<Oyster::Provision::Rackspace> backend
 will be used.
 
-Each backend needs to accept at least the C<name>,
-C<size>, C<image> and C<pub_ssh> parameters. The meaning
-of these parameters may differ from one backend to another.
+Each backend needs to accept at least the C<name>, C<size>, C<image> and
+C<pub_ssh> configuration parameters. The meaning of these parameters may
+differ from one backend to another.
 
 =head1 METHOS
 
