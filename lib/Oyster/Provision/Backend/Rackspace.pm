@@ -69,11 +69,78 @@ sub create {
         }
     } while ( ( $server->status // '' ) ne 'ACTIVE' );
 
-    warn "Server public IP is: @{$server->public_address}\n";
+    warn "Server public IP are: @{$server->public_address}\n";
+    my $public_ip  = (@{$server->public_address})[0];
+    my $servername = sprintf("oyster-%s", $self->name);
 
-    # Connect to server and execute installation routines?
-    # Use Net::SSH?
+    # Adds the server's name to the user's ~/.ssh/config
+    # using oyster-servername
+    {
+        open my $fh, '>>', "$ENV{HOME}/.ssh/config"
+            or die "Error opening $ENV{HOME}/.ssh/config for appending: $!";
+        my $template = "\nHost %s\n" .
+            "    User root\n" .
+            "    Port 22\n" .
+            "    Compression yes\n" .
+            "    HostName %s\n" .
+            "\n";
+        print $fh sprintf($template, $servername, $public_ip);
+        close $fh or die "Error closing $ENV{HOME}/.ssh/config: $!";
+    }
+
+    # Connect to server and execute installation routines -- unlike EC2 each
+    # server needs instantiated from scratch every time
+    warn "Initializing the server...";
+    $self->initialise();
+
+    warn "Deploying the application...";
+    $self->deploy();
+
 }
+
+sub initialise {
+    my $self = shift;
+    my $servername = sprintf("oyster-%s", $self->name);
+
+    # Adds the server's key to the user's ~/.ssh/authorized_keys
+    # FIXME there must be a better way?!
+    warn "Adding SSH key for $servername to ~/.ssh/authorized_keys\n";
+    qx{/usr/bin/ssh -o StrictHostKeyChecking=no -l root $servername 'echo oyster'};
+
+    # FIXME should call the module which does the installation...
+    warn "Installing wget, lighttpd and git...\n";
+    print qx{/usr/bin/ssh -l root $servername 'LC_ALL=C /usr/bin/apt-get install --yes wget lighttpd git git-core'};
+    print qx{/usr/bin/ssh -l root $servername 'LC_ALL=C /usr/sbin/service lighttpd stop'};
+    warn "Adding user perloyster...\n";
+    print qx{/usr/bin/ssh -l root $servername 'LC_ALL=C /usr/sbin/adduser --disabled-password --gecos "Perl Oyster" perloyster'};
+    warn "Copying keys to ~perloyster...\n";
+    print qx{/usr/bin/ssh -l root $servername 'LC_ALL=C /bin/mkdir ~perloyster/.ssh/'};
+    print qx{/usr/bin/ssh -l root $servername 'LC_ALL=C /bin/cp ~/.ssh/authorized_keys ~perloyster/.ssh/'};
+    print qx{/usr/bin/ssh -l root $servername 'LC_ALL=C /bin/chown --recursive perloyster ~perloyster/.ssh/'};
+    warn "Making perloyster readable...\n";
+    print qx{/usr/bin/ssh -l perloyster $servername 'LC_ALL=C /bin/chmod a+r ~perloyster/'};
+    #warn "Installing cpanminus...\n";
+    #print qx{/usr/bin/ssh -l perloyster $servername 'LC_ALL=C /usr/bin/wget --no-check-certificate http://xrl.us/cpanm ; chmod +x cpanm'};
+    #warn "Installing prerequisites for Oyster::Deploy::Git...\n";
+    #print qx{/usr/bin/ssh -l perloyster $servername 'LC_ALL=C ./cpanm --local-lib=~/perl5 App::cpanminus Dist::Zilla'};
+    warn "Getting and unpacking base system...\n";
+    print qx{/usr/bin/ssh -l perloyster $servername 'LC_ALL=C /usr/bin/wget --no-check-certificate https://darkpan.com/files/oyster-prereqs-20101122-2217.tgz'};
+    print qx{/usr/bin/ssh -l perloyster $servername 'LC_ALL=C /bin/tar xvf oyster-prereqs-20101122-2217.tgz'};
+    print qx{/usr/bin/ssh -l perloyster $servername 'LC_ALL=C /bin/echo export PERL5LIB="/home/perloyster/perl5/lib/perl5:/home/perloyster/perl/lib/perl5/x86_64-linux-gnu-thread-multi" >> ~/.bashrc'};
+    print qx{/usr/bin/ssh -l perloyster $servername 'LC_ALL=C /bin/echo export PATH="/home/perloyster/perl5/bin:\$PATH" >> ~/.bashrc'};
+
+    warn "Pushing and unpacking Oyster::Deploy::Git...\n";
+    print qx{/usr/bin/ssh -l perloyster $servername 'LC_ALL=C /bin/mkdir -p perl5/lib/perl5/Oyster/Deploy'};
+    print qx{/usr/bin/scp lib/Oyster/Deploy/Git.pm perloyster\@$servername:perl5/lib/perl5/Oyster/Deploy/};
+}
+
+sub deploy {
+    my $self = shift;
+    my $servername = sprintf("oyster-%s", $self->name);
+    warn "Deploying application to $servername...\n";
+    print qx{/usr/bin/ssh -l perloyster $servername "perl -MOyster::Deploy::Git -le'\$g=Oyster::Deploy::Git->new;\$g->deploy(q,/home/perloyster/oyster,)'"};
+}
+
 
 sub delete {
     my $self = shift;
