@@ -25,8 +25,8 @@ sub execute {
   my $zilla = $self->zilla;
 
   my $name = $opt->name
-    or die "No name provided!";
-  my @config_files = ($opt->name or './oyster.conf');
+    or die "No name provided - please provide a --name to provision\n";
+  my @config_files = ($opt->config or './oyster.conf');
 
   my $cfg = Config::Any->load_files({ files => \@config_files, use_ext => 0 });
   ($cfg) = values %{ $cfg->[0] }; # FIX with ::JFDI or similar
