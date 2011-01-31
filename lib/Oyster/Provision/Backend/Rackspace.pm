@@ -11,6 +11,7 @@ with qw(Oyster::Provision::API);
 has '_rs' => (
     is      => 'ro',
     isa     => 'Net::RackSpace::CloudServers',
+    lazy    => 1,
     builder => '_build_rs',
 );
 
