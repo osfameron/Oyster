@@ -41,16 +41,18 @@ sub execute {
 
   my %hash = @hashes > 1 ? %{ merge( @hashes ) } : %{ $hashes[0] };
 
-  my $type = delete $hash{type} || 'Oyster::Provision::Rackspace';
-  $hash{provision_backend} = $type =~/^Oyster::Provision::/ ? $type : "Oyster::Provision::$type";
+  my $type = delete $hash{type} || 'Oyster::Provision::Backend::Rackspace';
+  $hash{provision_class} = $type =~/^Oyster::Provision::Backend::/ ? $type : "Oyster::Provision::Backend::$type";
   $hash{pub_ssh} ||= "$ENV{HOME}/.ssh/id_rsa.pub";
   $hash{size}    ||= 1;  # id 1 - ram 256 MiB - disk 10 GiB
   $hash{image}   ||= 69; # id 69 - Ubuntu 10.10 (meerkat)
+  $hash{name}    ||= $name;
 
   warn Dumper(\%hash);
 
   my $server = Oyster::Provision->new(
         name => $name,
+        config => \%hash,
         %hash,
   );
   $server->create;
