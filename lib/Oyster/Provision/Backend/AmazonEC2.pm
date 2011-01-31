@@ -2,18 +2,19 @@ package Oyster::Provision::Backend::AmazonEC2;
 use Moose;
 use namespace::autoclean;
 
+with qw(Oyster::Provision::API);
+
 use Net::Amazon::EC2;
+
+sub BUILD {
+    my $self = shift;
+    $self->config->_image('ami-be6e99d7') unless $self->config->has_image;
+}
 
 has ec2_oyster_key => (
     is      => 'rw',
     isa     => 'Str',
     default => 'OysterDefault'
-);
-
-has image => (
-    isa     => 'Str',
-    is      => 'ro',
-    default => 'ami-be6e99d7'
 );
 
 has ec2 => (
@@ -77,7 +78,7 @@ sub _wait_for_instance {
     my $name = $self->name;    # cache the name
     for ( 1 .. 10 ) {          # XXX: try 10 times before giving up
         my $result =
-          $self->ec2->describe_instances( InstanceId => [$instance], );
+          $self->ec2->describe_instances( InstanceId => [$instance_id], );
 
         confess $result->errors->[0]->message
           if $result->isa('Net::Amazon::EC2::Errors');
@@ -102,8 +103,8 @@ sub _wait_for_instance {
 }
 
 sub delete {
-    my $self = shift;
-    $self->ec2->terminate_instances(
+    my $self   = shift;
+    my $result = $self->ec2->terminate_instances(
         InstanceId => [ $self->instance->instance_id ] );
 
     confess $result->errors->[0]->message
@@ -111,6 +112,8 @@ sub delete {
 
     $self->remove_instance;
 }
+
+sub resize { confess "ABSTRACT" }
 
 1;
 

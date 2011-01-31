@@ -2,6 +2,8 @@ package Oyster::Provision;
 use Moose;
 use namespace::autoclean;
 
+use Oyster::Provision::Config;
+
 has config => (
     isa      => 'HashRef',
     is       => 'ro',
@@ -11,7 +13,7 @@ has config => (
 has provision_class => (
     isa     => 'Str',
     is      => 'ro',
-    default => 'Oyster::Provision::Rackspace'
+    default => 'Oyster::Provision::Backend::Rackspace'
 );
 
 has 'provision_backend' => (
@@ -22,8 +24,22 @@ has 'provision_backend' => (
 );
 
 sub _build_provision_backend {
-    my $self = shift;
-    $self->provision_class->new( ${ $self->config } );
+    my $self  = shift;
+    my $class = $self->provision_class;
+    Class::MOP::load_class($class);
+
+    my $config = $self->config;
+
+    my $user = ( $config->{api_username} || $ENV{CLOUDSERVERS_USER} )
+      or die 'Need api_username in the config or CLOUDSERVERS_USER in the environment';
+    my $pass = ( $config->{api_password} || $ENV{CLOUDSERVERS_KEY} )
+      or die 'Need api_password in the config or CLOUDSERVERS_KEY in the environment';
+
+    $class->new(
+        config       => Oyster::Provision::Config->new($self->config),
+        api_username => $user,
+        api_password => $pass,
+    );
 }
 1;
 
