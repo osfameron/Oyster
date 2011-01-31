@@ -1,4 +1,5 @@
 package Oyster::Provision::Backend::AmazonEC2;
+use 5.10.1;
 use Moose;
 use namespace::autoclean;
 
@@ -37,7 +38,11 @@ sub _build_ec2 {
 
     unless ( defined($key_pairs) ) {
         printf( "Creating %s pair\n", $self->ec2_oyster_key );
-        $ec2->create_key_pair( { KeyName => $self->ec2_oyster_key } );
+        my $result =
+          $ec2->create_key_pair( { KeyName => $self->ec2_oyster_key } );
+
+        die $result->errors->[0]->message
+          if $result->isa('Net::Amazon::EC2::Errors');
     }
 
     return $ec2;
@@ -55,20 +60,20 @@ sub create {
 
     # Start 1 new instance from AMI: ami-XXXXXXXX
     my $result = $self->ec2->run_instances(
-        KeyName      => $self->ec2_oyster_key,
+
+        #        KeyName      => $self->ec2_oyster_key,
         ImageId      => $self->image,
         InstanceType => $self->size,
         MinCount     => 1,
         MaxCount     => 1,
     );
 
-    die $result->errors->[0]->message
-      if $result->isa('Net::Amazon::EC2::Errors');
+    if ( blessed($result) && $result->isa('Net::Amazon::EC2::Errors') ) {
+        die $result->errors->[0]->message;
+    }
 
     my $instance_id = $result->instances_set->[0]->instance_id;
-
-    my $instance = $self->_wait_for_instance($instance_id);
-
+    my $instance    = $self->_wait_for_instance($instance_id);
     $self->add_instance($instance);
 }
 
@@ -76,28 +81,23 @@ sub _wait_for_instance {
     my ( $self, $instance_id ) = @_;
     confess 'instance_id required' unless defined $instance_id;
     my $name = $self->name;    # cache the name
-    for ( 1 .. 10 ) {          # XXX: try 10 times before giving up
-        my $result =
-          $self->ec2->describe_instances( InstanceId => [$instance_id], );
+    my $ec2  = $self->ec2;
+    while (1) {
+        my $result = $ec2->describe_instances( InstanceId => [$instance_id], );
 
-        confess $result->errors->[0]->message
-          if $result->isa('Net::Amazon::EC2::Errors');
-
-        $result->[0]->isa('Net::Amazon::EC2::ReservationInfo')
-          or confess "$result isn't a Net::Amaozon::EC2::ReservationInfo";
-
-        my @found = map { @{ $_->instances_set } }
-          grep {
-            grep { $_->group_id eq $name }
-              @{ $_->group_set }
-          } @{$result};
-
-        if ( grep { $_->instance_state->code == 0 } @found ) {
-            sleep 1;
+        if ( blessed($result) && $result->isa('Net::Amazon::EC2::Errors') ) {
+            confess $result->errors->[0]->message;
         }
-        @found = grep { $_->instance_state->code == 16 } @found;
-        next unless scalar @found == 1;
-        return $found[0];
+        
+        confess "$result isn't a Net::Amaozon::EC2::ReservationInfo"
+          unless $result->[0]->isa('Net::Amazon::EC2::ReservationInfo');
+          
+          
+        my $instance = $result->[0]->{instances_set}->[0];
+        given ( $instance->instance_state->code ) {
+            when (16) { return $instance }
+            when (0)  { sleep 1 }
+        }
     }
     confess 'Instance never started!';
 }
@@ -107,8 +107,9 @@ sub delete {
     my $result = $self->ec2->terminate_instances(
         InstanceId => [ $self->instance->instance_id ] );
 
-    confess $result->errors->[0]->message
-      if $result->isa('Net::Amazon::EC2::Errors');
+    if ( blessed($result) && $result->isa('Net::Amazon::EC2::Errors') ) {
+        die $result->errors->[0]->message;
+    }
 
     $self->remove_instance;
 }
