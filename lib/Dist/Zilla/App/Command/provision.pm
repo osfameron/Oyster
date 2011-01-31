@@ -11,6 +11,7 @@ use Config::Any;
 use Hash::Merge 'merge';
 Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
 use Oyster::Provision;
+use Data::Dumper;
 
 sub abstract { 'provision a new Oyster VM' }
 
@@ -46,7 +47,7 @@ sub execute {
   $hash{size}    ||= 1;  # id 1 - ram 256 MiB - disk 10 GiB
   $hash{image}   ||= 69; # id 69 - Ubuntu 10.10 (meerkat)
 
-  warn Dumper(\%hash); use Data::Dumper;
+  warn Dumper(\%hash);
 
   my $server = Oyster::Provision->new(
         name => $name,
