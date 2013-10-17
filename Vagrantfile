@@ -1,8 +1,30 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+def parse_environment(env)
+  parsed = { # We may want to change these defaults
+    name: "Oyster",
+    cpus: "1", 
+    memory: "512",
+  }
+  parsed[:name] = ENV["name"] if ENV["name"]
+  begin
+    parsed.cpus = Integer(ENV["OYSTER_CPUS"])
+  rescue
+  end
+  begin
+    parsed.memory = Integer(ENV["OYSTER_CPUS"])
+  rescue
+  end
+  
+  return parsed
+end
+
 Vagrant.configure("2") do |config|
 
+  # Do some environment parsing
+  args = parse_environment(ENV)
+  
   config.vm.box = "ubuntu_1204_amd64"
 
   # Where to fetch the box from if it isn't installed
@@ -22,9 +44,12 @@ Vagrant.configure("2") do |config|
   config.vm.synced_folder code_root, '/srv/oyster/code'
 
   config.vm.provider :virtualbox do |vb|
-    # 1 gig might be a bit large for standard issue
-    # I personally throw memory at the problem, but not everyone has loads
-    vb.customize ["modifyvm", :id, "--memory", "1024"]
+    vb.customize [
+      "modifyvm", :id,
+      "--name",   args[:name],
+      "--cpus",   args[:cpus],
+      "--memory", args[:memory],
+    ]
   end
 
   config.vm.provision :puppet do |puppet|
