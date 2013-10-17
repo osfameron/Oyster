@@ -1,0 +1,3 @@
+[submodule "modules/perlbrew"]
+	path = modules/perlbrew
+	url = https://github.com/rafl/puppet-perlbrew.git
